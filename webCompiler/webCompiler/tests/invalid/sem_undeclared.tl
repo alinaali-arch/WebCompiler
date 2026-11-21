@@ -1,0 +1,3 @@
+start
+show count
+end

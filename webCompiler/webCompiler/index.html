@@ -1,0 +1,309 @@
+<!doctype html>
+<html lang="en" data-theme="dark">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>webCompiler</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect x='2' y='2' width='28' height='28' rx='8' fill='%238b5cf6'/%3E%3Cpath d='M10 11h12M16 11v11M12 22h8' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' fill='none'/%3E%3C/svg%3E">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Domine:wght@400..700&family=DM+Sans:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap">
+  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="webcompiler.css">
+  <script>
+    /* Apply the saved theme before the first paint (dark is the default) */
+    (function () {
+      var t = "dark";
+      try { if (localStorage.getItem("wc-theme") === "light") t = "light"; } catch (e) {}
+      document.documentElement.setAttribute("data-theme", t);
+    })();
+  </script>
+</head>
+<body>
+  <canvas id="bg-canvas" class="bg-canvas" aria-hidden="true"></canvas>
+  <div class="ambient" aria-hidden="true"><span></span><span></span><span></span></div>
+
+  <header class="topbar">
+    <button id="btn-side" class="btn btn-ghost icon-btn" aria-label="Saved programs and settings" aria-expanded="false" aria-controls="side" title="Saved programs and settings (Ctrl+B)">
+      <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="3"/><path d="M9.5 4.5v15"/></svg>
+    </button>
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 32 32">
+          <defs>
+            <linearGradient id="logo-grad" x1="0" y1="0" x2="1" y2="1">
+              <stop offset="0" stop-color="#8b5cf6"/>
+              <stop offset="1" stop-color="#c084fc"/>
+            </linearGradient>
+          </defs>
+          <rect x="2" y="2" width="28" height="28" rx="8" fill="url(#logo-grad)"/>
+          <path d="M10 11h12M16 11v11M12 22h8" stroke="#fff" stroke-width="2.4" stroke-linecap="round" fill="none"/>
+        </svg>
+      </div>
+      <div class="brand-text">
+        <div class="name">webCompiler</div>
+        <div class="tag">TraceLang &rarr; Python</div>
+      </div>
+    </div>
+
+    <div class="top-center">
+      <label class="sample-pick">
+        <span class="sr-only">Load a sample program</span>
+        <select id="sample" class="select" title="Load a sample program">
+          <option value="">Samples&hellip;</option>
+        </select>
+      </label>
+      <button id="btn-help" class="palette-btn" title="Keyboard shortcuts">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="6" width="18" height="12" rx="2.5"/><path d="M7 10h.01M11 10h.01M15 10h.01M7 14h10"/></svg>
+        <span>Shortcuts</span>
+        <kbd>?</kbd>
+      </button>
+    </div>
+
+    <div class="toolbar">
+      <button id="btn-compile" class="btn btn-primary" title="Translate to Python (Ctrl+Enter)">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="m8 5 11 7-11 7z"/></svg>
+        <span class="btn-label">Compile</span>
+      </button>
+      <button id="btn-run" class="btn btn-run" title="Translate and run in this browser (Ctrl+Shift+Enter)">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h12m-5-5 5 5-5 5"/></svg>
+        <span>Run</span>
+      </button>
+      <button id="btn-stop" class="btn btn-ghost" title="Stop the running program" hidden>
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><rect x="6.5" y="6.5" width="11" height="11" rx="2"/></svg>
+        <span>Stop</span>
+      </button>
+      <button id="btn-theme" class="btn btn-ghost icon-btn" title="Switch theme" aria-label="Switch theme"></button>
+    </div>
+  </header>
+
+  <main class="workbench" id="workbench">
+    <section class="pane editor-pane" aria-label="Program editor">
+      <div class="pane-head">
+        <span class="pane-name">
+          <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M8 7 4 12l4 5m8-10 4 5-4 5"/></svg>
+          program.tl
+        </span>
+        <span class="sample-info" id="sample-info">TraceLang source. Type here, then press Compile.</span>
+      </div>
+      <div class="editor">
+        <div class="gutter" id="gutter" aria-hidden="true"></div>
+        <div class="code-wrap">
+          <pre class="hl" id="hl" aria-hidden="true"></pre>
+          <textarea id="src" spellcheck="false" autocapitalize="off" autocomplete="off" aria-label="TraceLang source code"></textarea>
+        </div>
+      </div>
+      <div class="pane-foot">
+        <span id="cursor-info">Ln 1, Col 1</span>
+        <span class="muted">Indent with 4 spaces. Enter keeps the indentation.</span>
+      </div>
+    </section>
+
+    <div class="splitter" id="splitter" role="separator" aria-orientation="vertical" aria-label="Resize the panes" tabindex="0"></div>
+
+    <section class="pane output-pane" aria-label="Output">
+      <div class="pane-head">
+        <div class="tabs" role="tablist">
+          <div class="tab-row">
+            <button class="tab active" role="tab" data-tab="python" aria-selected="true">Python</button>
+            <button class="tab" role="tab" data-tab="console" aria-selected="false">Console</button>
+            <button class="tab" role="tab" data-tab="terminal" aria-selected="false">Terminal</button>
+            <button class="tab" role="tab" data-tab="reference" aria-selected="false">Reference</button>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel active" id="p-python" role="tabpanel">
+        <div class="panel-toolbar">
+          <span class="muted small" id="py-info">Press Compile to see the Python code.</span>
+          <span class="grow"></span>
+          <button class="btn btn-mini" id="btn-copy-py">Copy</button>
+          <button class="btn btn-mini" id="btn-dl-py">Download .py</button>
+        </div>
+        <div class="panel-scroll">
+          <pre class="py-out" id="py-out"></pre>
+          <div class="py-run" id="py-run" hidden>
+            <div class="term-label">Output</div>
+            <pre class="py-run-out" id="py-run-out"></pre>
+          </div>
+        </div>
+      </div>
+
+      <div class="panel" id="p-console" role="tabpanel">
+        <div class="panel-scroll">
+          <div id="console-out" class="console-out"></div>
+        </div>
+      </div>
+
+      <div class="panel" id="p-reference" role="tabpanel">
+        <div class="panel-scroll ref">
+          <h2>TraceLang reference</h2>
+          <p class="muted">TraceLang is a small language inspired by Python. Blocks are shown by indentation, not braces, and there are no semicolons.</p>
+
+          <h3>Program structure</h3>
+          <p>Every program starts with <code>start</code> and ends with <code>end</code>. Indent blocks with 4 spaces. Comments start with <code>#</code>.</p>
+<pre>start
+
+age: int = 20
+name: string = "Alina"
+show name
+show age
+
+end</pre>
+
+          <h3>Types</h3>
+          <p><code>int</code> (whole numbers), <code>float</code> (decimal numbers such as <code>85.5</code>), <code>string</code> (text in double quotes) and <code>bool</code> (<code>true</code> or <code>false</code>). An int value can be used where a float is needed.</p>
+
+          <h3>Variables</h3>
+<pre>age: int = 20          # declare with a value
+total: int            # declare without a value
+total = age + 5       # assign a new value (the type must match)</pre>
+          <p>Do not use <code>let</code>. A variable must get a value before it is used.</p>
+
+          <h3>Input and output</h3>
+<pre>write age: int        # declare and read an int from the input
+write name            # read into an existing variable
+show "Hello"          # output a text
+show age + 10         # output a value</pre>
+          <p><code>write</code> reads one line of input for each use. Supported types: int, float, bool, string.</p>
+
+          <h3>Operators</h3>
+          <table class="ref-table">
+            <tr><th>Kind</th><th>Operators</th></tr>
+            <tr><td>Arithmetic</td><td><code>+ - * / %</code></td></tr>
+            <tr><td>Relational</td><td><code>== != &lt; &gt; &lt;= &gt;=</code></td></tr>
+            <tr><td>Logical</td><td><code>and or not</code></td></tr>
+          </table>
+          <p>Precedence, from lowest to highest: <code>or</code>, <code>and</code>, <code>not</code>, comparisons, <code>+ -</code>, <code>* / %</code>, unary <code>-</code>. Use parentheses to change the order. Comparisons cannot be chained: write <code>a &lt; b and b &lt; c</code>.</p>
+          <p><code>%</code> works on int values only. <code>/</code> between two ints gives an int (the fraction is cut off). Division by a zero literal is an error.</p>
+
+          <h3>If, elif and else</h3>
+<pre>if marks &gt;= 50:
+    show "Pass"
+    if marks &gt;= 80:
+        show "Distinction"
+elif marks &gt;= 40:
+    show "Weak pass"
+else:
+    show "Fail"</pre>
+          <p>The condition must be <code>bool</code>. Conditions can be nested.</p>
+
+          <h3>Loops</h3>
+<pre>i: int = 1
+while i &lt;= 5:
+    show i
+    i = i + 1
+
+for k in 1 to 3:      # k goes 1, 2, 3 (both ends included)
+    show k</pre>
+          <p>The loop variable of a <code>for</code> loop cannot be changed inside the loop.</p>
+
+          <h3>Functions</h3>
+<pre>function add(a: int, b: int) -> int:
+    result: int = a + b
+    return result
+
+function greet(name: string):
+    show name
+
+total: int = add(10, 20)
+greet("Alina")</pre>
+          <p>Functions are defined at the top level of the program. A function with <code>-&gt; type</code> must end with <code>return value</code> of that type. A function without a return type uses <code>return</code> with no value, or no return at all.</p>
+
+          <h3>Scope</h3>
+          <p>A variable exists only in the block where it is declared, and in the blocks inside it. A name can be declared again in an inner block. Functions can read the global variables (the ones declared at the top level), but they cannot change them. Pass values in as parameters and return the result.</p>
+
+          <h3>Common errors</h3>
+          <ul>
+            <li><b>Undeclared name:</b> declare the variable or function before you use it.</li>
+            <li><b>Type error:</b> both sides of an assignment, comparison or operator must have compatible types.</li>
+            <li><b>Used before a value:</b> give the variable a value first.</li>
+            <li><b>No string joining:</b> <code>+</code> cannot join text. Use separate <code>show</code> lines.</li>
+            <li><b>Indentation error:</b> each block must be indented the same way, and <code>end</code> must be at column 1.</li>
+          </ul>
+        </div>
+      </div>
+
+      <div class="panel" id="p-terminal" role="tabpanel">
+        <div class="term-input">
+          <div class="term-label">Input (one value per line, read by each write)</div>
+          <textarea id="stdin" class="input" rows="3" spellcheck="false" aria-label="Program input" placeholder="Type the input values here, one per line"></textarea>
+        </div>
+        <div class="term-body" id="term-out">
+          <div class="term-empty">Run a program to see its output here.</div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="statusbar">
+    <span class="status" id="status">Ready</span>
+    <span class="muted" id="status-info">Python runs in your browser. Nothing is sent to a server.</span>
+  </footer>
+
+  <div id="side-scrim" class="side-scrim" hidden></div>
+  <aside id="side" class="side" aria-label="Saved programs and settings">
+    <header class="side-head">
+      <div class="side-tabs" role="tablist">
+        <button class="side-tab active" role="tab" data-side="programs" aria-selected="true">Saved programs</button>
+        <button class="side-tab" role="tab" data-side="settings" aria-selected="false">Settings</button>
+      </div>
+      <button class="btn btn-mini btn-ghost icon-btn" id="side-close" aria-label="Close the panel">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </header>
+
+    <section id="side-programs" class="side-body" role="tabpanel">
+      <form class="side-save" id="prog-form">
+        <input id="prog-name" class="input" maxlength="60" placeholder="Name for this program" aria-label="Program name">
+        <button class="btn btn-primary btn-mini" id="prog-save" type="submit">Save</button>
+      </form>
+      <div class="side-actions">
+        <label class="btn btn-mini" for="prog-import">Import .tl</label>
+        <input type="file" id="prog-import" accept=".tl,text/plain" hidden>
+        <span class="muted small" id="prog-count"></span>
+      </div>
+      <ul id="prog-list" class="prog-list" aria-label="Saved programs"></ul>
+      <p class="small muted side-note">Saved in this browser. Export a program as a .tl file to keep a copy or move it to another computer.</p>
+    </section>
+
+    <section id="side-settings" class="side-body" role="tabpanel" hidden>
+      <div class="set-row col">
+        <div class="set-text">
+          <div class="set-title">Font size <span id="set-font-val" class="mono"></span></div>
+          <div class="set-desc">Applies to the editor and the code in the output panels.</div>
+        </div>
+        <input type="range" id="set-font" min="12" max="18" step="0.5" aria-label="Font size">
+        <pre id="font-preview" class="font-preview" aria-hidden="true">start
+  show "Hello"
+end</pre>
+      </div>
+      <button id="set-reset" class="btn btn-mini">Restore defaults</button>
+    </section>
+  </aside>
+
+  <dialog id="help-dialog" class="dialog" aria-labelledby="help-title">
+    <div class="dialog-head">
+      <h2 id="help-title">Keyboard shortcuts</h2>
+      <button class="btn btn-mini btn-ghost icon-btn" data-close aria-label="Close">
+        <svg class="ico" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6 6 18"/></svg>
+      </button>
+    </div>
+    <table class="keys">
+      <tr><td><kbd>Ctrl</kbd> <kbd>Enter</kbd></td><td>Compile (translate to Python)</td></tr>
+      <tr><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>Enter</kbd></td><td>Run the program</td></tr>
+      <tr><td><kbd>Ctrl</kbd> <kbd>S</kbd></td><td>Save the program</td></tr>
+      <tr><td><kbd>Ctrl</kbd> <kbd>B</kbd></td><td>Show or hide saved programs and settings</td></tr>
+      <tr><td><kbd>Ctrl</kbd> <kbd>Shift</kbd> <kbd>L</kbd></td><td>Switch dark and light theme</td></tr>
+      <tr><td><kbd>Esc</kbd></td><td>Close the panel or this dialog</td></tr>
+    </table>
+    <p class="small muted">The program runs in a separate Python worker. It stops after 5 seconds.</p>
+  </dialog>
+
+  <div id="toasts" class="toasts" aria-live="polite"></div>
+
+  <script src="tl2py.js"></script>
+  <script src="samples.js"></script>
+  <script src="app.js"></script>
+</body>
+</html>

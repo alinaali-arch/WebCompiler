@@ -1,0 +1,92 @@
+/* webCompiler additions: output panels for Python, console, keys dialog and small helpers.
+ * The look (theme, glass, animation) comes from style.css. */
+
+[hidden] { display: none !important; }
+
+.grow { flex: 1; }
+
+/* ---------- Python output ---------- */
+
+.py-out {
+  margin: 0; padding: 0; font: var(--code-size)/var(--code-lh) var(--mono);
+  white-space: pre; tab-size: 4; color: var(--sx-id); overflow: visible;
+}
+
+/* ---------- console ---------- */
+
+.console-out { display: flex; flex-direction: column; gap: 10px; }
+.console-line {
+  padding: 11px 13px; border-radius: 12px; border: 1px solid var(--border);
+  background: var(--surface); animation: card-in .25s ease both;
+}
+.console-line.err { border-color: color-mix(in srgb, var(--err) 40%, transparent); background: var(--err-soft); }
+.console-line.ok { border-color: color-mix(in srgb, var(--ok) 35%, transparent); }
+.console-line.warn { border-color: color-mix(in srgb, var(--warn) 40%, transparent); background: var(--warn-soft); }
+.console-title { font: 700 13.5px/1.3 var(--ui); color: var(--text); }
+.console-line.err .console-title { color: var(--err); }
+.console-line.ok .console-title { color: var(--ok); }
+.console-body {
+  margin-top: 6px; font: 13px/1.55 var(--ui); color: var(--text-2); white-space: pre-wrap; word-break: break-word;
+}
+
+/* ---------- keys dialog ---------- */
+
+.keys { width: 100%; border-collapse: collapse; margin: 4px 0 12px; font-size: 13.5px; }
+.keys td { padding: 8px 6px; border-bottom: 1px solid var(--border); vertical-align: top; }
+.keys td:first-child { white-space: nowrap; width: 46%; }
+.keys kbd {
+  display: inline-block; padding: 2px 7px; margin: 0 2px; border-radius: 6px; font: 600 11.5px/1.4 var(--mono);
+  background: var(--surface-2); border: 1px solid var(--border-2); color: var(--text-2);
+}
+
+/* ---------- saved programs ---------- */
+
+.prog-list { list-style: none; margin: 12px 0 0; padding: 0; display: flex; flex-direction: column; gap: 8px; }
+.prog-item {
+  display: flex; align-items: center; gap: 10px; padding: 10px 11px; border-radius: 12px;
+  border: 1px solid var(--border); background: var(--surface); animation: card-in .3s ease both;
+}
+.prog-info { flex: 1; min-width: 0; }
+.prog-name { font: 600 13.5px/1.3 var(--ui); color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.prog-date { white-space: nowrap; }
+.prog-actions { display: flex; gap: 6px; flex: none; flex-wrap: wrap; justify-content: flex-end; }
+.prog-actions .btn.danger:hover:not(:disabled) { color: var(--err); border-color: var(--err); }
+.prog-empty { padding: 10px 2px; }
+
+/* ---------- mobile: keep the output and editor usable ---------- */
+
+@media (max-width: 920px) {
+  .keys td:first-child { width: auto; }
+}
+
+/* ---------- output tabs: fit all tabs in the bar, no scrollbar ---------- */
+
+.output-pane .pane-head { min-width: 0; }
+.output-pane .pane-head .tabs { flex: 1; min-width: 0; overflow: visible; }
+.output-pane .tab-row { flex-wrap: nowrap; overflow: visible; }
+.output-pane .tab { padding-left: 10px; padding-right: 10px; white-space: nowrap; }
+
+/* ---------- reference panel ---------- */
+
+.ref { font: 14px/1.6 var(--ui); color: var(--text-2); }
+.ref h2 { font-size: 20px; color: var(--text); margin: 0 0 6px; }
+.ref h3 { font-size: 15px; color: var(--text); margin: 20px 0 6px; }
+.ref p { margin: 6px 0; }
+.ref code { font: 12.5px/1.4 var(--mono); padding: 1px 5px; border-radius: 6px; background: var(--surface-2); color: var(--sx-id); }
+.ref pre {
+  margin: 8px 0; padding: 10px 12px; border-radius: 10px; overflow-x: auto;
+  font: 12.5px/1.6 var(--mono); color: var(--text); background: var(--surface-2); border: 1px solid var(--border);
+}
+.ref ul { padding-left: 20px; margin: 6px 0; }
+.ref li { margin: 4px 0; }
+.ref-table { width: 100%; border-collapse: collapse; margin: 8px 0; }
+.ref-table th, .ref-table td { text-align: left; padding: 7px 8px; border-bottom: 1px solid var(--border); }
+.ref-table th { color: var(--text); font-weight: 600; }
+
+/* ---------- output below the Python code (same output as the Terminal tab) ---------- */
+
+.py-run { margin-top: 18px; padding-top: 12px; border-top: 1px solid var(--border); }
+.py-run-out {
+  margin: 6px 0 0; font: var(--code-size)/var(--code-lh) var(--mono); white-space: pre-wrap;
+  color: var(--text); min-height: 24px;
+}

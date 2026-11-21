@@ -1,0 +1,13 @@
+start
+
+function fib(n: int) -> int:
+    if n < 2:
+        return n
+    return fib(n - 1) + fib(n - 2)
+
+i: int = 0
+while i <= 10:
+    show fib(i)
+    i = i + 1
+
+end
